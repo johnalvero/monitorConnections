@@ -7,6 +7,13 @@ Monitor's incoming and outgoing initiating connections for both TCP and UDP.
 -exclude-public (hides connections from and to public IP addresses)
 -exclude-udp (hides UDP traffic)
 ```
+###Building
+```
+go build monitorConnections.go
+```
 
-###Example
+
+###CLI Example
+```
 ./monitorConnections -device en1 -exclude-public -exclude-udp
+```
