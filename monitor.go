@@ -24,12 +24,14 @@ type Connection struct {
 var connectionStateTable = make(map[string]*Connection)
 var excludePublic bool
 var excludeUDP bool
+var generateCSV bool
 var device string
 
 func main() {
 	// Parse command-line flags
 	flag.BoolVar(&excludePublic, "exclude-public", false, "Exclude connections to/from public IP addresses")
 	flag.BoolVar(&excludeUDP, "exclude-udp", false, "Exclude UDP connections")
+	flag.BoolVar(&generateCSV,"generate-csv", false, "Generate CSV file for plotting")
 	flag.StringVar(&device, "device", "eth0", "Network device to monitor (e.g., eth0)")
 	flag.Parse()
 
@@ -100,7 +102,11 @@ func processTCPConnection(ip *layers.IPv4, tcp *layers.TCP) {
 	} else if tcp.ACK && !tcp.SYN && !tcp.FIN && !tcp.RST {
 		// This is the final ACK in a three-way handshake
 		if conn, exists := connectionStateTable[connKey]; exists {
-			printConnection(conn)
+			if generateCSV {
+				printCSVConnection(conn)
+			} else {
+				printConnection(conn)
+			}
 			delete(connectionStateTable, connKey) // Remove connection after printing
 		}
 	}
@@ -121,7 +127,11 @@ func processUDPConnection(ip *layers.IPv4, udp *layers.UDP) {
 			Protocol: "UDP",
 		}
 		connectionStateTable[connKey] = conn
-		printConnection(conn)
+		if generateCSV {
+			printCSVConnection(conn)
+		} else {
+			printConnection(conn)
+		}
 	}
 }
 
@@ -143,5 +153,11 @@ func isPrivateIP(ip net.IP) bool {
 func printConnection(conn *Connection) {
 	fmt.Printf("Initiated Connection - Src: %s:%d -> Dst: %s:%d, Protocol: %s\n",
 		conn.SrcIP, conn.SrcPort, conn.DstIP, conn.DstPort, conn.Protocol)
+	time.Sleep(time.Millisecond * 100) // To ensure output synchronization in console
+}
+
+func printCSVConnection(conn *Connection) {
+	//fmt.Printf("(\"%s\",\"%s\",\"%s:%d\"),\n",conn.SrcIP, conn.DstIP, conn.Protocol, conn.DstPort)
+	fmt.Printf("%s,%s,%s:%d\n",conn.SrcIP, conn.DstIP, conn.Protocol, conn.DstPort)
 	time.Sleep(time.Millisecond * 100) // To ensure output synchronization in console
 }
